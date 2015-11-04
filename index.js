@@ -61,22 +61,69 @@ if (env.development){
 }
 
 
+
+app.get('/custom/*?', function(request, response){
+    var path = request.path.substring("/custom".length);
+    processPath(path, request, response);
+});
+
+app.get('/:type/:variant/:path', function(request, response) {
+    var variants = require("./variants.config");
+    var params = request.params;
+
+    var variant;
+
+    try {
+        var variant = variants[params.type][params.variant];
+    }
+    catch (e) {
+        return response.send(404);
+    }
+
+    if (!variant && params.variant != "original")
+        return response.send(404);
+
+    var path;
+
+    if (params.variant == "original")
+        path = params.path;
+    else
+        path = variant + "/" + params.path;
+
+    processPath(path, request, response);
+});
+
+function processPath (path, request, response) {
+    var image = new Img({path: path});
+
+    console.log(image);
+
+    image.getFile()
+        .pipe(new streams.identify())
+        .pipe(new streams.resize())
+        .pipe(new streams.filter())
+        .pipe(new streams.optimize())
+        .pipe(streams.response(request, response));
+}
+
 /*
 Return an image modified to the requested parameters
   - request format:
     /:modifers/path/to/image.format:metadata
     eg: https://my.cdn.com/s50/sample/test.png
 */
-app.get('/*?', function(request, response){
-  var image = new Img(request);
+// app.get('/*?', function(request, response){
+//   var image = new Img(request);
 
-  image.getFile()
-    .pipe(new streams.identify())
-    .pipe(new streams.resize())
-    .pipe(new streams.filter())
-    .pipe(new streams.optimize())
-    .pipe(streams.response(request, response));
-});
+//   console.log("getFile", image)
+
+//   image.getFile()
+//     .pipe(new streams.identify())
+//     .pipe(new streams.resize())
+//     .pipe(new streams.filter())
+//     .pipe(new streams.optimize())
+//     .pipe(streams.response(request, response));
+// });
 
 
 /**
@@ -86,6 +133,5 @@ var server = app.listen(app.get('port'), function () {
   var host = server.address().address;
   var port = server.address().port;
 
-  console.log("host", host)
   console.log('Example app listening at http://%s:%s', host, port);
 });
