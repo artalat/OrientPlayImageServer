@@ -67,7 +67,7 @@ app.get('/custom/*?', function(request, response){
     processPath(path, request, response);
 });
 
-app.get('/:type/:variant/:path', function(request, response) {
+app.get('/:variant/:type/:path', function(request, response) {
     var variants = require("./variants.config");
     var params = request.params;
 
@@ -86,9 +86,9 @@ app.get('/:type/:variant/:path', function(request, response) {
     var path;
 
     if (params.variant == "original")
-        path = params.path;
+        path = params.type + '/' + params.path;
     else
-        path = variant + "/" + params.path;
+        path = variant + "/" + params.type + '/' + params.path;
 
     processPath(path, request, response);
 });
@@ -96,7 +96,7 @@ app.get('/:type/:variant/:path', function(request, response) {
 function processPath (path, request, response) {
     var image = new Img({path: path});
 
-    console.log(image);
+    // console.log(image);
 
     image.getFile()
         .pipe(new streams.identify())
